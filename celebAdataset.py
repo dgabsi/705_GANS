@@ -51,7 +51,7 @@ class celebADataset(data.Dataset):
         #        self.imgs.append(filename)
         #self.imgs=sorted(self.imgs)
 
-        if type=='generate':
+        if type=='generate':    #Inspired from https://pytorch.org/tutorials/beginner/dcgan_faces_tutorial.html- But very much changed.
             self.transform = transforms.Compose([transforms.Resize((image_size, image_size)),
                                         transforms.CenterCrop(image_size),
                                         transforms.ToTensor(),
@@ -59,7 +59,7 @@ class celebADataset(data.Dataset):
                                         ])
 
         else:
-
+            #This is for the super resolution Dataset strudture. Creating low reswolution and high resolution images
             self.lr_transform = transforms.Compose([transforms.Resize((image_size//4, image_size//4), Image.BICUBIC),
                                         transforms.ToTensor(),
                                         transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))

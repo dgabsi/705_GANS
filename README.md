@@ -38,8 +38,9 @@ Project structure:
 - main_gan.py
 - training_gan.py
 - utils.py
-- inception_score.py  (Dataset)
+- inception_score.py  
 - celebA_dataset.py (Dataset)
+- **GAN_main_notebook.ipynb** (Main notebook that should be used)
 
 packages needed :
 - torch 1.8.1 

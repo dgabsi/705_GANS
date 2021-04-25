@@ -3,7 +3,7 @@ import torch.nn as nn
 import os
 import numpy as np
 
-
+#Inspired from https://pytorch.org/tutorials/beginner/dcgan_faces_tutorial.html- But very much changed
 class Generator(nn.Module):
 
     def create_generator_block(self, in_channels, last=False):
