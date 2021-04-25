@@ -37,6 +37,7 @@ class SRGenerator(nn.Module):
         pixel_shuffle_b_list=[]
         for block in range(num_blocks):
             pixel_shuffle_b_list.append(nn.Sequential(nn.Conv2d(channels, 4*channels, kernel_size=3, padding=1),
+                      nn.BatchNorm2d(4*channels),
                       nn.PixelShuffle(upscale_factor=2),
                       nn.PReLU()))
 
@@ -70,8 +71,8 @@ class SRGenerator(nn.Module):
         layer3_res_last_output = self.layer3(layer2_res_output)+ layer1_output
         layer4_pix_s_output = self.layer4_px_shift(layer3_res_last_output)
         layer5_conv_output = self.layer5_conv(layer4_pix_s_output)
-        tanh_output = self.out_tanh(layer5_conv_output)
-        return tanh_output
+        #tanh_output = self.out_tanh(layer5_conv_output)
+        return layer5_conv_output
 
     def save_checkpoint(self,saved_dir, filename):
         # Save the weights to file

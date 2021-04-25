@@ -95,23 +95,25 @@ class SAGenerator(nn.Module):
         hidden_size_divider = (image_size // default_hidden_size)
         hidden_size = int(default_hidden_size // hidden_size_divider)
 
-        self.noise_size = noise_size
 
-        self.convt1 = self.input_conv = nn.Sequential(nn.ConvTranspose2d(noise_size, hidden_size * 16, kernel_size=4, stride=1),
+
+        self.convt1 = nn.Sequential(nn.utils.spectral_norm(nn.ConvTranspose2d(noise_size, hidden_size * 16, kernel_size=4, stride=1)),
+                                    nn.BatchNorm2d(hidden_size * 16),
                                                       nn.ReLU())
+        #self.convt2 = SAGeneratorBlock(hidden_size * 32)
         self.convt2 = SAGeneratorBlock(hidden_size * 16)
         self.convt3 = SAGeneratorBlock(hidden_size* 8, with_attn=True)
-        self.convt4 = SAGeneratorBlock(hidden_size * 4)
+        self.convt4 = SAGeneratorBlock(hidden_size * 4, with_attn=True)
         self.convt5 = SAGeneratorBlock(hidden_size * 2, last=True)
         self.tanh = nn.Tanh()
 
         #DCGAN Initalization
-        for layer in self.modules():
-            if isinstance(layer, (nn.Conv2d)):
-                nn.init.normal_(layer.weight.data, 0.0, 0.02)
-            if isinstance(layer, (nn.BatchNorm2d)):
-                nn.init.normal_(layer.weight.data, 1.0, 0.02)
-                nn.init.constant_(layer.bias.data, 0)
+        #for layer in self.modules():
+        #    if isinstance(layer, (nn.Conv2d)):
+        #        nn.init.normal_(layer.weight.data, 0.0, 0.02)
+        #    if isinstance(layer, (nn.BatchNorm2d)):
+        #        nn.init.normal_(layer.weight.data, 0.0, 0.02)
+        #        nn.init.constant_(layer.bias.data, 0)
 
 
     def forward(self, noise_inputs):
@@ -121,6 +123,7 @@ class SAGenerator(nn.Module):
         convt3_output = self.convt3(convt2_output)
         convt4_output = self.convt4(convt3_output)
         convt5_output = self.convt5(convt4_output)
+        #convt6_output = self.convt5(convt5_output)
         output = self.tanh(convt5_output)
 
         return output
@@ -191,20 +194,21 @@ class SADiscriminator(nn.Module):
         hidden_size_divider = (image_size // default_hidden_size)
         hidden_size = int(default_hidden_size // hidden_size_divider)
 
-        self.conv1 = self.input_conv = nn.Sequential(nn.Conv2d(3, hidden_size, kernel_size=4, stride=2, padding=1),
+        self.conv1 = self.input_conv = nn.Sequential(nn.utils.spectral_norm(nn.Conv2d(3, hidden_size, kernel_size=4, stride=2, padding=1)),
+                                                     nn.BatchNorm2d(hidden_size),
                                         nn.LeakyReLU(negative_slope=0.2))
-        self.conv2 = SADiscriminatorBlock( hidden_size, with_attn=True)
-        self.conv3 = SADiscriminatorBlock(hidden_size * 2)
+        self.conv2 = SADiscriminatorBlock(hidden_size,with_attn=True)
+        self.conv3 = SADiscriminatorBlock( hidden_size*2)
         self.conv4 = SADiscriminatorBlock(hidden_size * 4)
-        self.conv5 = SADiscriminatorBlock(hidden_size * 8, last=True)
+        self.conv5 = SADiscriminatorBlock(hidden_size * 8,last=True)
 
         # DCGAN Initalization
-        for layer in self.modules():
-            if isinstance(layer, (nn.Conv2d)):
-                nn.init.normal_(layer.weight.data, 0.0, 0.02)
-            if isinstance(layer, (nn.BatchNorm2d)):
-                nn.init.normal_(layer.weight.data, 1.0, 0.02)
-                nn.init.constant_(layer.bias.data, 0)
+        #for layer in self.modules():
+        #    if isinstance(layer, (nn.Conv2d)):
+        #        nn.init.normal_(layer.weight.data, 0.0, 0.02)
+        #    if isinstance(layer, (nn.BatchNorm2d)):
+         #       nn.init.normal_(layer.weight.data, 1.0, 0.02)
+         #       nn.init.constant_(layer.bias.data, 0)
 
     def forward(self, inputs):
 
@@ -213,6 +217,7 @@ class SADiscriminator(nn.Module):
         conv3_output = self.conv3(conv2_output)
         conv4_output = self.conv4(conv3_output)
         conv5_output = self.conv5(conv4_output)
+        #conv6_output = self.conv6(conv5_output)
         output = conv5_output
         return output
 

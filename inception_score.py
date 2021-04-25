@@ -5,13 +5,14 @@ from torch.utils.data import DataLoader
 import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
-import spicy
+#import spicy
 from scipy import stats
+import utils
 
 
 INCEPTION_SIZE=299
 
-def calc_inception_FID_score(batch_size, device, eval_dataset, generator, type):
+def calc_inception_FID_score(batch_size, device, eval_dataset, generator, type, noise_size=None):
     #calculate Frechete Inception score.
     #It is based on distnce of means and convarience of real imapes comapred to fake images
 
@@ -21,7 +22,7 @@ def calc_inception_FID_score(batch_size, device, eval_dataset, generator, type):
     inception.eval()
     inception= inception.to(device)
 
-
+    generator.eval()
     data_loader = DataLoader(eval_dataset, batch_size=batch_size, shuffle=True, num_workers=2,drop_last=True)
 
     all_real_images=None
@@ -35,15 +36,15 @@ def calc_inception_FID_score(batch_size, device, eval_dataset, generator, type):
         inception_result_real = inception(prepared_real_image).cpu().detach().numpy()
 
         if not type=='SRGAN':
-            noise = generator.module.generate_noise(real_image.size()[0]).to(device)
+            noise = utils.generate_noise(real_image.size()[0],noise_size).to(device)
             fake_image = generator(noise).to(device).detach()
         else:
-            lq_image=data[1]
+            lq_image=data[1].to(device)
             fake_image = generator(lq_image).to(device).detach()
         #Take Inception outputs- Before the classification layer
         prepared_fake_image = F.interpolate(fake_image, INCEPTION_SIZE)
         inception_result_fake = inception(prepared_fake_image).cpu().detach().numpy()
-
+        #first
         if all_real_images is None:
             all_real_images=inception_result_real
             all_fake_images=inception_result_fake
@@ -65,10 +66,12 @@ def calc_inception_FID_score(batch_size, device, eval_dataset, generator, type):
     inception = means_distance.dot(means_distance) + np.trace(
         cov_real + cov_fake - 2 * sqrtm(cov_real.dot(cov_fake)))
 
+    generator.train()
+
     return inception
 
 
-def calc_inception_score(device, generator, splits=10,eval_size=50000):
+def calc_inception_score(device, noise_size, generator, splits=10,eval_size=50000):
     #Calculate Inception score
 
     #Based on the classification output of the Inception model trained on Imagenet
@@ -77,12 +80,14 @@ def calc_inception_score(device, generator, splits=10,eval_size=50000):
     inception.eval()
     inception= inception.to(device)
 
-    num_batches=eval_size//batch_size
 
+    generator.eval()
+
+    num_batches = eval_size // batch_size
     #claculate incpetion predictions in generated images
     all_fake_predictions = None
     for batch in range(num_batches):
-        noise = generator.module.generate_noise(batch_size).to(device)
+        noise = utils.generate_noise(batch_size,noise_size).to(device)
         fake_batch = generator(noise).to(device).detach()
         prepared_fake_batch = F.interpolate(fake_batch, INCEPTION_SIZE)
         inception_logits= inception(prepared_fake_batch)
@@ -92,9 +97,11 @@ def calc_inception_score(device, generator, splits=10,eval_size=50000):
         else:
             all_fake_predictions=np.concatenate((all_fake_predictions,predictions))
 
+    eval_size_equal = (len(all_fake_predictions) // splits) * splits #Need to have an equal number of splits so cut off end if not
+
     #Calculate Inception score . Based on KL Divergence.
     all_scores=[]
-    for split in np.split(all_fake_predictions, splits):
+    for split in np.split(all_fake_predictions[:eval_size_equal], splits):
         split_scores=[]
         prob_y = np.repeat(np.mean(split, axis=0, keepdims=True), len(split),axis=0)
         kl_div=stats.entropy(split, prob_y, axis=1)
@@ -103,5 +110,6 @@ def calc_inception_score(device, generator, splits=10,eval_size=50000):
 
     inception_score=np.mean(all_scores)
 
+    generator.train()
 
     return inception_score

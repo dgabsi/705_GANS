@@ -1,6 +1,10 @@
 from torchvision.utils import make_grid
 import matplotlib.pyplot as plt
 import os
+import pickle
+import datetime
+import torch
+from torch.autograd import Variable
 
 
 def show_images_grid(images, title='', figsize=(10,6)):
@@ -54,3 +58,27 @@ def plot_inception_scores(all_inception_scores, labels, title, dir_name, filenam
     plt.savefig(plot_file, dpi=fig.dpi)
     plt.show()
 
+
+def save_to_pickle(entity, file):
+    with open(file, 'wb') as file:
+        pickle.dump(entity, file)
+    file.close()
+
+def load_from_pickle(file):
+    with open(file, 'rb') as file:
+        entity = pickle.loads(file.read())
+    file.close()
+    return entity
+
+def load_from_checkpoint(model,saved_dir, filename):
+    # Load the weights from file
+    model.load_state_dict(torch.load(os.path.join(saved_dir, filename)))
+
+def save_checkpoint(model,saved_dir, filename):
+    # Save the weights to file
+    torch.save(model.state_dict(), os.path.join(saved_dir, filename+".pth"))
+
+def generate_noise(batch_size, noise_size):
+    #Generate noise from normal distribution
+    noise = torch.randn(batch_size, noise_size, 1, 1)
+    return noise

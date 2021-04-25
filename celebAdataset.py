@@ -8,7 +8,7 @@ import torch
 import pandas as pd
 
 
-
+'''
 def create_celebA_dataset(data_dir, image_size, split='train'):
 
     transform =transforms.Compose([transforms.Resize((image_size ,image_size)),
@@ -20,7 +20,7 @@ def create_celebA_dataset(data_dir, image_size, split='train'):
     celeba_dataset =datasets.CelebA(data_dir, split=split,transform=transform)
 
     return celeba_dataset
-
+'''
 
 
 
@@ -33,11 +33,12 @@ class celebADataset(data.Dataset):
 
         split_list=['train', 'valid', 'test']
         #If dataset was not loaded - Loading it from pytorch dataset. this is the most comfortable way
-        if len(os.listdir(data_dir)) == 0:
-            celeba_dataset = datasets.CelebA(data_dir, split='all', download=True)
+        if len(os.listdir(os.path.join(data_dir, "celeba/img_align_celeba"))) == 0:
+            print('Image directory is empty! Please read instructions in ReadMe file')
 
         self.images_dir = os.path.join(data_dir, "celeba/img_align_celeba")
         self.image_size=image_size
+        #The split to train, valid, test
         self.split=split
         self.split_df=pd.read_csv(os.path.join(data_dir, "celeba/list_eval_partition.txt"), names=['file', 'split'], delim_whitespace=True)
         self.imgs=self.split_df.loc[self.split_df["split"]==split_list.index(self.split), ["file"]].values[:].squeeze()
@@ -51,7 +52,7 @@ class celebADataset(data.Dataset):
         #self.imgs=sorted(self.imgs)
 
         if type=='generate':
-            self.transform = transforms.Compose([transforms.Resize((image_size, image_size), Image.BICUBIC),
+            self.transform = transforms.Compose([transforms.Resize((image_size, image_size)),
                                         transforms.CenterCrop(image_size),
                                         transforms.ToTensor(),
                                         transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
@@ -63,7 +64,7 @@ class celebADataset(data.Dataset):
                                         transforms.ToTensor(),
                                         transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
                                         ])
-            self.transform = transforms.Compose([transforms.Resize((image_size, image_size)),
+            self.transform = transforms.Compose([transforms.Resize((image_size, image_size), Image.BICUBIC),
                                         transforms.ToTensor(),
                                         transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
                                         ])

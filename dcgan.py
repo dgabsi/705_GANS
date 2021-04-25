@@ -21,7 +21,7 @@ class Generator(nn.Module):
             layers_block_list = [nn.ConvTranspose2d(in_channels, out_channels, kernel_size=4,
                                                     stride=2, padding=1),
                                  nn.BatchNorm2d(out_channels),
-                                 nn.ReLU()]
+                                 nn.ReLU(inplace=True)]
         else:
             out_channels=3
             layers_block_list = [nn.ConvTranspose2d(in_channels, out_channels, kernel_size=4,
@@ -29,7 +29,7 @@ class Generator(nn.Module):
         block = nn.Sequential(*layers_block_list)
         return block
 
-    def __init__(self, noise_size, image_size=64):
+    def __init__(self, noise_size=100, image_size=64):
         super(Generator, self).__init__()
 
         #The default structure of dcgan is built on 64 hidden size. starting from 4*4 image, there are 4 layers, each multiplies the size to by 2,
@@ -39,10 +39,10 @@ class Generator(nn.Module):
         hidden_size_divider = (image_size // default_hidden_size)
         hidden_size = int(default_hidden_size // hidden_size_divider)
 
-        self.noise_size=noise_size
+
         #the number of channels is first hidden_size*16 and divided by two each layer, while the image size is upsampled.
-        self.input_conv = nn.Sequential(nn.ConvTranspose2d(noise_size, hidden_size * 16, 4, stride=1),
-                                        nn.ReLU())
+        self.input_conv = nn.Sequential(nn.ConvTranspose2d(noise_size, hidden_size * 16, kernel_size=4, stride=1),
+                                        nn.ReLU(inplace=True))
         self.convt2 = self.create_generator_block(in_channels=hidden_size * 16)
         self.convt3 = self.create_generator_block(in_channels=hidden_size * 8)
         self.convt4 = self.create_generator_block(in_channels=hidden_size * 4)
@@ -52,7 +52,7 @@ class Generator(nn.Module):
 
         #Initalization According to https://arxiv.org/abs/1511.06434
         for layer in self.modules():
-            if isinstance(layer, (nn.Conv2d)):
+            if isinstance(layer, (nn.ConvTranspose2d)):
                 nn.init.normal_(layer.weight.data, 0.0, 0.02)
             if isinstance(layer, (nn.BatchNorm2d)):
                 nn.init.normal_(layer.weight.data, 1.0, 0.02)
@@ -136,7 +136,7 @@ class Discriminator(nn.Module):
         for layer in self.modules():
             if isinstance(layer, (nn.Conv2d)):
                 nn.init.normal_(layer.weight.data, 0.0, 0.02)
-            if isinstance(layer, (nn.BatchNorm2d)):
+            if isinstance(layer, (nn.BatchNorm2d) or nn.InstanceNorm2d):
                 nn.init.normal_(layer.weight.data, 1.0, 0.02)
                 nn.init.constant_(layer.bias.data, 0)
 
