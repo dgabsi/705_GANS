@@ -1,8 +1,8 @@
-# 705 project
+# CelebA_GANS
 # Code for course Deep Learning for Image Analysis 
 ### Daniela Stern- Gabsi 
 
-### github- dgabsi/705_GANS
+### github- dgabsi/CelebA_GANS(705_GANS)
 (updates were made from danielaneuralx which is my working github but its all mine)
 
 
